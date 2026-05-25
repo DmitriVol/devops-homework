@@ -25,9 +25,9 @@ def lambda_handler(event, context):
         return _response(400, {"error": "Request body must be valid JSON."})
 
     # Validate required field — key must exist and must not be None or empty string
-    payload = body.get("payload")
     if "payload" not in body:
         return _response(400, {"error": "Missing required field: payload."})
+    payload = body["payload"]
     if payload is None or payload == "":
         return _response(400, {"error": "Field 'payload' must not be empty."})
 
