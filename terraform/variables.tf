@@ -18,3 +18,8 @@ variable "budget_limit_usd" {
   description = "Monthly spend limit in USD (~EUR equivalent) that triggers alerts"
   type        = string
 }
+
+variable "ci_iam_username" {
+  description = "IAM username that CI uses to deploy (used to scope the deployment role trust policy)"
+  type        = string
+}
