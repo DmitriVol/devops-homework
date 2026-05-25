@@ -1,0 +1,22 @@
+data "archive_file" "lambda" {
+  type        = "zip"
+  source_dir  = "${path.module}/../lambda"
+  output_path = "${path.module}/lambda.zip"
+}
+
+resource "aws_lambda_function" "health_check" {
+  function_name = "${var.environment}-health-check-function"
+  role          = aws_iam_role.lambda_execution.arn
+
+  filename         = data.archive_file.lambda.output_path
+  source_code_hash = data.archive_file.lambda.output_base64sha256
+
+  runtime = "python3.12"
+  handler = "handler.lambda_handler"
+
+  environment {
+    variables = {
+      TABLE_NAME = aws_dynamodb_table.requests.name
+    }
+  }
+}
