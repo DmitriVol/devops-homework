@@ -5,3 +5,4 @@ budget_limit_usd = "11"
 ci_iam_username    = "cli-user"
 api_throttle_rate  = 100
 api_throttle_burst = 200
+log_retention_days = 30

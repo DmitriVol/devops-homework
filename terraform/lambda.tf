@@ -1,3 +1,10 @@
+# Manage the log group explicitly so we can set retention.
+# Without this, Lambda auto-creates it and logs accumulate indefinitely.
+resource "aws_cloudwatch_log_group" "lambda" {
+  name              = "/aws/lambda/${var.environment}-health-check-function"
+  retention_in_days = var.log_retention_days
+}
+
 data "archive_file" "lambda" {
   type        = "zip"
   source_dir  = "${path.module}/../lambda"
@@ -13,10 +20,13 @@ resource "aws_lambda_function" "health_check" {
 
   runtime = "python3.12"
   handler = "handler.lambda_handler"
+  timeout = var.lambda_timeout
 
   environment {
     variables = {
       TABLE_NAME = aws_dynamodb_table.requests.name
     }
   }
+
+  depends_on = [aws_cloudwatch_log_group.lambda]
 }

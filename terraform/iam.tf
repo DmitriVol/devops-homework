@@ -96,16 +96,6 @@ resource "aws_iam_role_policy" "ci_deployment" {
         ]
       },
       {
-        Sid    = "TerraformStateLock"
-        Effect = "Allow"
-        Action = [
-          "dynamodb:GetItem",
-          "dynamodb:PutItem",
-          "dynamodb:DeleteItem"
-        ]
-        Resource = "arn:aws:dynamodb:${var.aws_region}:${data.aws_caller_identity.current.account_id}:table/terraform-state-lock"
-      },
-      {
         Sid    = "ManageLambda"
         Effect = "Allow"
         Action = [

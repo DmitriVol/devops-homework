@@ -24,6 +24,17 @@ variable "ci_iam_username" {
   type        = string
 }
 
+variable "lambda_timeout" {
+  description = "Lambda function timeout in seconds"
+  type        = number
+  default     = 30
+}
+
+variable "log_retention_days" {
+  description = "CloudWatch log retention period in days"
+  type        = number
+}
+
 variable "api_throttle_rate" {
   description = "API Gateway steady-state request rate limit (requests per second)"
   type        = number
