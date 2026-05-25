@@ -23,3 +23,13 @@ variable "ci_iam_username" {
   description = "IAM username that CI uses to deploy (used to scope the deployment role trust policy)"
   type        = string
 }
+
+variable "api_throttle_rate" {
+  description = "API Gateway steady-state request rate limit (requests per second)"
+  type        = number
+}
+
+variable "api_throttle_burst" {
+  description = "API Gateway burst request limit"
+  type        = number
+}
