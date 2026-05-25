@@ -11,4 +11,6 @@ resource "aws_dynamodb_table" "requests" {
   server_side_encryption {
     enabled = true
   }
+
+  tags = local.common_tags
 }

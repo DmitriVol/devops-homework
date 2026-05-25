@@ -17,6 +17,8 @@ resource "aws_iam_role" "lambda_execution" {
       Action    = "sts:AssumeRole"
     }]
   })
+
+  tags = local.common_tags
 }
 
 resource "aws_iam_role_policy" "lambda_cloudwatch" {
@@ -72,6 +74,8 @@ resource "aws_iam_role" "ci_deployment" {
       Action = "sts:AssumeRole"
     }]
   })
+
+  tags = local.common_tags
 }
 
 resource "aws_iam_role_policy" "ci_deployment" {

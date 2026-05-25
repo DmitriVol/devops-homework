@@ -3,6 +3,8 @@
 resource "aws_cloudwatch_log_group" "lambda" {
   name              = "/aws/lambda/${var.environment}-health-check-function"
   retention_in_days = var.log_retention_days
+
+  tags = local.common_tags
 }
 
 data "archive_file" "lambda" {
@@ -29,4 +31,6 @@ resource "aws_lambda_function" "health_check" {
   }
 
   depends_on = [aws_cloudwatch_log_group.lambda]
+
+  tags = local.common_tags
 }

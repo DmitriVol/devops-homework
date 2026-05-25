@@ -1,6 +1,8 @@
 resource "aws_apigatewayv2_api" "health_check" {
   name          = "${var.environment}-health-check-api"
   protocol_type = "HTTP"
+
+  tags = local.common_tags
 }
 
 resource "aws_apigatewayv2_stage" "default" {
@@ -12,6 +14,8 @@ resource "aws_apigatewayv2_stage" "default" {
     throttling_rate_limit  = var.api_throttle_rate
     throttling_burst_limit = var.api_throttle_burst
   }
+
+  tags = local.common_tags
 }
 
 resource "aws_apigatewayv2_integration" "lambda" {
