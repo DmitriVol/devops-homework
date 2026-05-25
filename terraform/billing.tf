@@ -4,7 +4,7 @@
 resource "aws_budgets_budget" "spend_alert" {
   name         = "${var.environment}-spend-alert"
   budget_type  = "COST"
-  limit_amount = var.budget_limit_usd
+  limit_amount = tostring(var.budget_limit_usd)
   limit_unit   = "USD"
   time_unit    = "MONTHLY"
 
@@ -23,4 +23,6 @@ resource "aws_budgets_budget" "spend_alert" {
     notification_type          = "ACTUAL"
     subscriber_email_addresses = [var.alert_email]
   }
+
+  tags = local.common_tags
 }

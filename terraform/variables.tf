@@ -1,6 +1,11 @@
 variable "environment" {
   description = "Deployment environment (staging or prod)"
   type        = string
+
+  validation {
+    condition     = contains(["staging", "prod"], var.environment)
+    error_message = "environment must be 'staging' or 'prod'."
+  }
 }
 
 variable "aws_region" {
@@ -16,7 +21,7 @@ variable "alert_email" {
 
 variable "budget_limit_usd" {
   description = "Monthly spend limit in USD (~EUR equivalent) that triggers alerts"
-  type        = string
+  type        = number
 }
 
 variable "ci_iam_username" {
