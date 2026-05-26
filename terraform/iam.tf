@@ -55,6 +55,23 @@ resource "aws_iam_role_policy" "lambda_dynamodb" {
   })
 }
 
+resource "aws_iam_role_policy" "lambda_xray" {
+  name = "${var.environment}-lambda-xray-policy"
+  role = aws_iam_role.lambda_execution.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "xray:PutTraceSegments",
+        "xray:PutTelemetryRecords"
+      ]
+      Resource = "*"
+    }]
+  })
+}
+
 # ---------------------------------------------------------------------------
 # CI deployment role
 # Used by the CI/CD pipeline to deploy infrastructure via Terraform.

@@ -20,9 +20,14 @@ resource "aws_lambda_function" "health_check" {
   filename         = data.archive_file.lambda.output_path
   source_code_hash = data.archive_file.lambda.output_base64sha256
 
-  runtime = "python3.12"
-  handler = "handler.lambda_handler"
-  timeout = var.lambda_timeout
+  runtime                        = "python3.12"
+  handler                        = "handler.lambda_handler"
+  timeout                        = var.lambda_timeout
+  reserved_concurrent_executions = var.lambda_concurrent_executions
+
+  tracing_config {
+    mode = "Active"
+  }
 
   environment {
     variables = {

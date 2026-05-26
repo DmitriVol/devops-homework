@@ -35,6 +35,11 @@ variable "create_oidc_provider" {
   default     = false
 }
 
+variable "lambda_concurrent_executions" {
+  description = "Reserved concurrent executions for the Lambda function (controls max parallelism)"
+  type        = number
+}
+
 variable "lambda_timeout" {
   description = "Lambda function timeout in seconds"
   type        = number
