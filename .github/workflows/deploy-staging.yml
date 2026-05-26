@@ -35,3 +35,14 @@ jobs:
       - name: Terraform init
         working-directory: terraform
         run: terraform init -backend-config="key=staging/terraform.tfstate"
+
+      # Security gate — scan IaC before any changes reach AWS.
+      # CKV_AWS_272: Lambda code signing — intentionally not used (hash verification via source_code_hash).
+      # CKV2_AWS_29: API Gateway access logs — out of scope for this project.
+      - name: Checkov IaC security scan
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: terraform
+          framework: terraform
+          skip_check: CKV_AWS_272,CKV2_AWS_29
+          soft_fail: false
