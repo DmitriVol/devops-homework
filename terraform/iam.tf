@@ -176,12 +176,20 @@ resource "aws_iam_role_policy" "ci_deployment" {
         Resource = "arn:aws:dynamodb:${var.aws_region}:${data.aws_caller_identity.current.account_id}:table/${var.environment}-requests-db"
       },
       {
+        Sid    = "DescribeCloudWatchLogGroups"
+        Effect = "Allow"
+        Action = ["logs:DescribeLogGroups"]
+        # DescribeLogGroups is a list action — AWS evaluates it against the root
+        # log-group ARN (empty name), so it cannot be scoped to a specific group.
+        # Scoped to this account + region to limit blast radius.
+        Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:*"
+      },
+      {
         Sid    = "ManageCloudWatchLogs"
         Effect = "Allow"
         Action = [
           "logs:CreateLogGroup",
           "logs:DeleteLogGroup",
-          "logs:DescribeLogGroups",
           "logs:PutRetentionPolicy",
           "logs:ListTagsLogGroup",
           "logs:ListTagsForResource",
