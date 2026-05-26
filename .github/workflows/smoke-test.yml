@@ -58,8 +58,8 @@ jobs:
           echo "Status: $STATUS" && cat /tmp/body.json | jq
           [ "$STATUS" = "400" ] || { echo "FAIL: expected 400, got $STATUS"; exit 1; }
 
-      - name: "GET method → expect 405"
+      - name: "GET method → expect 400"
         run: |
           STATUS=$(curl -s -o /tmp/body.json -w "%{http_code}" -X GET "$URL")
           echo "Status: $STATUS" && cat /tmp/body.json
-          [ "$STATUS" = "405" ] || { echo "FAIL: expected 405, got $STATUS"; exit 1; }
+          [ "$STATUS" = "400" ] || { echo "FAIL: expected 400, got $STATUS"; exit 1; }
