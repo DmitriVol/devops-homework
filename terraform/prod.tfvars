@@ -6,5 +6,5 @@ github_repo           = "DmitriVol/devops-homework"
 create_oidc_provider  = false
 api_throttle_rate  = 100
 api_throttle_burst = 200
-lambda_concurrent_executions = 50
+lambda_concurrent_executions = -1
 log_retention_days = 30

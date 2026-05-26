@@ -42,6 +42,7 @@ jobs:
       #   CKV2_AWS_29  — API Gateway access logs: out of scope
       #   CKV_AWS_309  — API GW route auth type: endpoint is intentionally public (no auth)
       #   CKV_AWS_76   — API GW stage access logging: out of scope
+      #   CKV_AWS_115  — Lambda reserved concurrency: account limit = 10 (AWS minimum), reservation impossible
       #   CKV_AWS_116  — Lambda DLQ: n/a for synchronous API Gateway invocations
       #   CKV_AWS_117  — Lambda in VPC: would require NAT gateway, out of scope
       #   CKV_AWS_119  — DynamoDB KMS CMK: AWS-managed keys are sufficient
@@ -52,7 +53,7 @@ jobs:
         with:
           directory: terraform
           framework: terraform
-          skip_check: CKV_AWS_272,CKV2_AWS_29,CKV_AWS_309,CKV_AWS_76,CKV_AWS_116,CKV_AWS_117,CKV_AWS_119,CKV_AWS_158,CKV_AWS_173
+          skip_check: CKV_AWS_272,CKV2_AWS_29,CKV_AWS_309,CKV_AWS_76,CKV_AWS_115,CKV_AWS_116,CKV_AWS_117,CKV_AWS_119,CKV_AWS_158,CKV_AWS_173
           soft_fail: false
 
       - name: Terraform plan
