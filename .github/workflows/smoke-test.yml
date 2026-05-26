@@ -3,6 +3,7 @@ name: API Smoke Test
 on:
   workflow_dispatch:
 
+#URL- generated once when AWS creates the API Gateway resource and stays the same across every terraform apply. It only changes if the resource is destroyed and recreated
 jobs:
   smoke:
     name: Smoke test /health endpoint
@@ -11,7 +12,7 @@ jobs:
       URL: https://2mmdl69iw9.execute-api.us-east-1.amazonaws.com/health
 
     steps:
-      - name: "Healthy request → expect 200"
+      - name: "Healthy request → expect 200 + healthy body"
         run: |
           STATUS=$(curl -s -o /tmp/body.json -w "%{http_code}" \
             -X POST "$URL" \
@@ -19,6 +20,7 @@ jobs:
             -d '{"payload": "hello"}')
           echo "Status: $STATUS" && cat /tmp/body.json | jq
           [ "$STATUS" = "200" ] || { echo "FAIL: expected 200, got $STATUS"; exit 1; }
+          jq -e '.status == "healthy"' /tmp/body.json || { echo "FAIL: body missing status=healthy"; exit 1; }
 
       - name: "Missing payload → expect 400"
         run: |
@@ -37,3 +39,27 @@ jobs:
             -d '{"payload": ""}')
           echo "Status: $STATUS" && cat /tmp/body.json | jq
           [ "$STATUS" = "400" ] || { echo "FAIL: expected 400, got $STATUS"; exit 1; }
+
+      - name: "Null payload → expect 400"
+        run: |
+          STATUS=$(curl -s -o /tmp/body.json -w "%{http_code}" \
+            -X POST "$URL" \
+            -H "Content-Type: application/json" \
+            -d '{"payload": null}')
+          echo "Status: $STATUS" && cat /tmp/body.json | jq
+          [ "$STATUS" = "400" ] || { echo "FAIL: expected 400, got $STATUS"; exit 1; }
+
+      - name: "Malformed JSON → expect 400"
+        run: |
+          STATUS=$(curl -s -o /tmp/body.json -w "%{http_code}" \
+            -X POST "$URL" \
+            -H "Content-Type: application/json" \
+            -d 'not-json')
+          echo "Status: $STATUS" && cat /tmp/body.json | jq
+          [ "$STATUS" = "400" ] || { echo "FAIL: expected 400, got $STATUS"; exit 1; }
+
+      - name: "GET method → expect 405"
+        run: |
+          STATUS=$(curl -s -o /tmp/body.json -w "%{http_code}" -X GET "$URL")
+          echo "Status: $STATUS" && cat /tmp/body.json
+          [ "$STATUS" = "405" ] || { echo "FAIL: expected 405, got $STATUS"; exit 1; }
