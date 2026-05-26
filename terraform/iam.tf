@@ -198,7 +198,10 @@ resource "aws_iam_role_policy" "ci_deployment" {
           "logs:UntagLogGroup",
           "logs:UntagResource"
         ]
-        Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.environment}-health-check-function:*"
+        Resource = [
+          "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.environment}-health-check-function",
+          "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.environment}-health-check-function:*"
+        ]
       },
       {
         Sid    = "ManageIAMRoles"
