@@ -36,6 +36,13 @@ jobs:
         working-directory: terraform
         run: terraform init -backend-config="key=staging/terraform.tfstate"
 
+      # Scan Lambda dependencies for known CVEs before touching infrastructure.
+      # boto3 is runtime-provided and not listed; this guards any future additions.
+      - name: Lambda dependency scan
+        run: |
+          pip install pip-audit --quiet
+          pip-audit -r lambda/requirements.txt --skip-editable
+
       # Security gate — scan IaC before any changes reach AWS.
       # Skipped checks (intentional design decisions):
       #   CKV_AWS_272  — Lambda code signing: not used, hash verification via source_code_hash
