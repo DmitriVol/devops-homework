@@ -5,11 +5,9 @@ on:
     branches: [main]
 
 jobs:
-  deploy:
-    name: Terraform apply (staging)
+  plan:
+    name: Plan (staging)
     runs-on: ubuntu-latest
-    # id-token: write is required for GitHub to mint an OIDC token that AWS
-    # can verify — no static credentials needed.
     permissions:
       id-token: write
       contents: read
@@ -67,4 +65,53 @@ jobs:
         working-directory: terraform
         env:
           TF_VAR_alert_email: ${{ secrets.ALERT_EMAIL }}
-        run: terraform plan -var-file="staging.tfvars"
+        run: terraform plan -var-file="staging.tfvars" -out=tfplan
+
+      # Save the plan so the apply job executes exactly what was reviewed —
+      # no re-planning against potentially drifted state.
+      - name: Upload plan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-staging
+          path: terraform/tfplan
+          retention-days: 1
+
+  apply:
+    name: Apply (staging)
+    needs: plan
+    runs-on: ubuntu-latest
+    # Pauses here for a required reviewer in GitHub → Settings → Environments → staging
+    environment: staging
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ secrets.STAGING_DEPLOY_ROLE_ARN }}
+          role-duration-seconds: 3600
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.6"
+
+      - name: Terraform init
+        working-directory: terraform
+        run: terraform init -backend-config="key=staging/terraform.tfstate"
+
+      - name: Download plan artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan-staging
+          path: terraform
+
+      - name: Terraform apply
+        working-directory: terraform
+        run: terraform apply tfplan
