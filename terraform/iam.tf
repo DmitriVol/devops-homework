@@ -69,9 +69,17 @@ resource "aws_iam_role" "ci_deployment" {
     Statement = [{
       Effect = "Allow"
       Principal = {
-        AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/${var.ci_iam_username}"
+        Federated = local.github_oidc_provider_arn
       }
-      Action = "sts:AssumeRole"
+      Action = "sts:AssumeRoleWithWebIdentity"
+      Condition = {
+        StringEquals = {
+          "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+        }
+        StringLike = {
+          "token.actions.githubusercontent.com:sub" = local.github_oidc_sub
+        }
+      }
     }]
   })
 
