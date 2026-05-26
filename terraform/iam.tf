@@ -30,7 +30,6 @@ resource "aws_iam_role_policy" "lambda_cloudwatch" {
     Statement = [{
       Effect = "Allow"
       Action = [
-        "logs:CreateLogGroup",
         "logs:CreateLogStream",
         "logs:PutLogEvents"
       ]
@@ -136,8 +135,14 @@ resource "aws_iam_role_policy" "ci_deployment" {
           "lambda:UpdateFunctionConfiguration",
           "lambda:AddPermission",
           "lambda:RemovePermission",
+          "lambda:GetPolicy",
           "lambda:ListVersionsByFunction",
-          "lambda:PublishVersion"
+          "lambda:PublishVersion",
+          "lambda:PutFunctionConcurrency",
+          "lambda:DeleteFunctionConcurrency",
+          "lambda:ListTags",
+          "lambda:TagResource",
+          "lambda:UntagResource"
         ]
         Resource = "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${var.environment}-health-check-function"
       },
@@ -165,9 +170,27 @@ resource "aws_iam_role_policy" "ci_deployment" {
           "dynamodb:DescribeContinuousBackups",
           "dynamodb:DescribeTimeToLive",
           "dynamodb:ListTagsOfResource",
-          "dynamodb:TagResource"
+          "dynamodb:TagResource",
+          "dynamodb:UntagResource"
         ]
         Resource = "arn:aws:dynamodb:${var.aws_region}:${data.aws_caller_identity.current.account_id}:table/${var.environment}-requests-db"
+      },
+      {
+        Sid    = "ManageCloudWatchLogs"
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:DeleteLogGroup",
+          "logs:DescribeLogGroups",
+          "logs:PutRetentionPolicy",
+          "logs:ListTagsLogGroup",
+          "logs:ListTagsForResource",
+          "logs:TagLogGroup",
+          "logs:TagResource",
+          "logs:UntagLogGroup",
+          "logs:UntagResource"
+        ]
+        Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.environment}-health-check-function:*"
       },
       {
         Sid    = "ManageIAMRoles"
@@ -177,17 +200,35 @@ resource "aws_iam_role_policy" "ci_deployment" {
           "iam:DeleteRole",
           "iam:GetRole",
           "iam:PassRole",
+          "iam:UpdateAssumeRolePolicy",
           "iam:PutRolePolicy",
           "iam:DeleteRolePolicy",
           "iam:GetRolePolicy",
           "iam:ListRolePolicies",
           "iam:ListAttachedRolePolicies",
-          "iam:TagRole"
+          "iam:TagRole",
+          "iam:UntagRole"
         ]
         Resource = [
           "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.environment}-lambda-execution-role",
           "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.environment}-ci-deployment-role"
         ]
+      },
+      {
+        Sid    = "ManageOIDCProvider"
+        Effect = "Allow"
+        Action = [
+          "iam:CreateOpenIDConnectProvider",
+          "iam:DeleteOpenIDConnectProvider",
+          "iam:GetOpenIDConnectProvider",
+          "iam:TagOpenIDConnectProvider",
+          "iam:UntagOpenIDConnectProvider",
+          "iam:ListOpenIDConnectProviderTags",
+          "iam:UpdateOpenIDConnectProviderThumbprint",
+          "iam:AddClientIDToOpenIDConnectProvider",
+          "iam:RemoveClientIDFromOpenIDConnectProvider"
+        ]
+        Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/token.actions.githubusercontent.com"
       },
       {
         Sid    = "ManageBudgets"
@@ -196,7 +237,10 @@ resource "aws_iam_role_policy" "ci_deployment" {
           "budgets:CreateBudget",
           "budgets:ModifyBudget",
           "budgets:DeleteBudget",
-          "budgets:ViewBudget"
+          "budgets:ViewBudget",
+          "budgets:ListTagsForResource",
+          "budgets:TagResource",
+          "budgets:UntagResource"
         ]
         Resource = "arn:aws:budgets::${data.aws_caller_identity.current.account_id}:budget/${var.environment}-spend-alert"
       }
