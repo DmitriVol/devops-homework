@@ -1,0 +1,39 @@
+name: API Smoke Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    name: Smoke test /health endpoint
+    runs-on: ubuntu-latest
+    env:
+      URL: https://2mmdl69iw9.execute-api.us-east-1.amazonaws.com/health
+
+    steps:
+      - name: "Healthy request → expect 200"
+        run: |
+          STATUS=$(curl -s -o /tmp/body.json -w "%{http_code}" \
+            -X POST "$URL" \
+            -H "Content-Type: application/json" \
+            -d '{"payload": "hello"}')
+          echo "Status: $STATUS" && cat /tmp/body.json | jq
+          [ "$STATUS" = "200" ] || { echo "FAIL: expected 200, got $STATUS"; exit 1; }
+
+      - name: "Missing payload → expect 400"
+        run: |
+          STATUS=$(curl -s -o /tmp/body.json -w "%{http_code}" \
+            -X POST "$URL" \
+            -H "Content-Type: application/json" \
+            -d '{}')
+          echo "Status: $STATUS" && cat /tmp/body.json | jq
+          [ "$STATUS" = "400" ] || { echo "FAIL: expected 400, got $STATUS"; exit 1; }
+
+      - name: "Empty payload → expect 400"
+        run: |
+          STATUS=$(curl -s -o /tmp/body.json -w "%{http_code}" \
+            -X POST "$URL" \
+            -H "Content-Type: application/json" \
+            -d '{"payload": ""}')
+          echo "Status: $STATUS" && cat /tmp/body.json | jq
+          [ "$STATUS" = "400" ] || { echo "FAIL: expected 400, got $STATUS"; exit 1; }
