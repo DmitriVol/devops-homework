@@ -24,9 +24,15 @@ variable "budget_limit_usd" {
   type        = number
 }
 
-variable "ci_iam_username" {
-  description = "IAM username that CI uses to deploy (used to scope the deployment role trust policy)"
+variable "github_repo" {
+  description = "GitHub repository in owner/repo format (used to scope the OIDC trust policy)"
   type        = string
+}
+
+variable "create_oidc_provider" {
+  description = "Create the GitHub Actions OIDC provider (account-level, true for staging only)"
+  type        = bool
+  default     = false
 }
 
 variable "lambda_timeout" {
