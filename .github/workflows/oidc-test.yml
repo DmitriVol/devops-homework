@@ -1,0 +1,23 @@
+name: OIDC Smoke Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-oidc:
+    name: Verify OIDC role assumption
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ secrets.STAGING_DEPLOY_ROLE_ARN }}
+          role-duration-seconds: 900
+
+      - name: Confirm assumed identity
+        run: aws sts get-caller-identity
