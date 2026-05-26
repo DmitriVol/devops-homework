@@ -23,10 +23,16 @@ locals {
     aws_iam_openid_connect_provider.github[0].arn
   ) : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/token.actions.githubusercontent.com"
 
-  # The `sub` claim GitHub includes in the OIDC token differs by workflow trigger:
-  #   staging — push to main (no GitHub Environment) → branch-scoped sub
-  #   prod    — workflow_dispatch with `environment: prod` → environment-scoped sub
-  github_oidc_sub = var.environment == "staging" ? (
-    "repo:${var.github_repo}:ref:refs/heads/main"
-  ) : "repo:${var.github_repo}:environment:prod"
+  # The `sub` claim GitHub includes in the OIDC token differs by workflow trigger
+  # and whether the job uses a GitHub Environment.
+  #   staging plan job  — no environment, push to main → branch-scoped sub
+  #   staging apply job — uses `environment: staging`  → environment-scoped sub
+  #   prod    apply job — uses `environment: prod`      → environment-scoped sub
+  # IAM StringLike accepts a list; any matching element grants access.
+  github_oidc_sub = var.environment == "staging" ? tolist([
+    "repo:${var.github_repo}:ref:refs/heads/main",
+    "repo:${var.github_repo}:environment:staging"
+  ]) : tolist([
+    "repo:${var.github_repo}:environment:prod"
+  ])
 }
