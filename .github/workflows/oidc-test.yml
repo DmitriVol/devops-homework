@@ -21,3 +21,11 @@ jobs:
 
       - name: Confirm assumed identity
         run: aws sts get-caller-identity
+
+      - name: Lambda package versions
+        run: |
+          echo "=== Staging packages (s3://devops-hw-terraform-state/lambda-packages/staging/) ==="
+          aws s3 ls s3://devops-hw-terraform-state/lambda-packages/staging/ --recursive --human-readable
+          echo ""
+          echo "=== Prod packages (s3://devops-hw-terraform-state/lambda-packages/prod/) ==="
+          aws s3 ls s3://devops-hw-terraform-state/lambda-packages/prod/ --recursive --human-readable
