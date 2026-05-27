@@ -5,8 +5,57 @@ on:
     branches: [main]
 
 jobs:
+  package:
+    name: Package Lambda (staging)
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    outputs:
+      s3_key: ${{ steps.upload.outputs.s3_key }}
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ secrets.STAGING_DEPLOY_ROLE_ARN }}
+          role-duration-seconds: 3600
+
+      # Scan Lambda dependencies for known CVEs before building the package.
+      # boto3 is runtime-provided and not listed; this guards any future additions.
+      - name: Lambda dependency scan
+        run: |
+          pip install pip-audit --quiet
+          pip-audit -r lambda/requirements.txt --skip-editable
+
+      - name: Compute version string
+        id: version
+        run: echo "version=run${{ github.run_number }}-$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      # Install dependencies into build/ then add handler.py — produces a
+      # self-contained zip that Lambda can run without a layer.
+      - name: Build Lambda package
+        run: |
+          mkdir -p build
+          pip install -r lambda/requirements.txt -t build/ --quiet
+          cp lambda/handler.py build/
+          cd build && zip -r ../function.zip .
+
+      - name: Upload package to S3
+        id: upload
+        run: |
+          S3_KEY="lambda-packages/staging/${{ steps.version.outputs.version }}/function.zip"
+          aws s3 cp function.zip "s3://devops-hw-terraform-state/${S3_KEY}"
+          echo "s3_key=${S3_KEY}" >> "$GITHUB_OUTPUT"
+
   plan:
     name: Plan (staging)
+    needs: package
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -34,13 +83,6 @@ jobs:
         working-directory: terraform
         run: terraform init -backend-config="key=staging/terraform.tfstate"
 
-      # Scan Lambda dependencies for known CVEs before touching infrastructure.
-      # boto3 is runtime-provided and not listed; this guards any future additions.
-      - name: Lambda dependency scan
-        run: |
-          pip install pip-audit --quiet
-          pip-audit -r lambda/requirements.txt --skip-editable
-
       # Security gate — scan IaC before any changes reach AWS.
       # Skipped checks (intentional design decisions):
       #   CKV_AWS_272  — Lambda code signing: not used, hash verification via source_code_hash
@@ -65,6 +107,8 @@ jobs:
         working-directory: terraform
         env:
           TF_VAR_alert_email: ${{ secrets.ALERT_EMAIL }}
+          TF_VAR_lambda_s3_key: ${{ needs.package.outputs.s3_key }}
+          TF_VAR_lambda_version: ${{ needs.package.outputs.version }}
         run: terraform plan -var-file="staging.tfvars" -out=tfplan
 
       # Save the plan so the apply job executes exactly what was reviewed —
