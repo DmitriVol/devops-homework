@@ -11,9 +11,9 @@ resource "aws_lambda_function" "health_check" {
   function_name = "${var.environment}-health-check-function"
   role          = aws_iam_role.lambda_execution.arn
 
-  s3_bucket    = var.lambda_s3_bucket
-  s3_key       = var.lambda_s3_key
-  description  = var.lambda_version
+  s3_bucket   = var.lambda_s3_bucket
+  s3_key      = var.lambda_s3_key
+  description = var.lambda_version
 
   runtime                        = "python3.12"
   handler                        = "handler.lambda_handler"
