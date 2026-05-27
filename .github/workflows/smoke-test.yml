@@ -3,6 +3,9 @@ name: API Smoke Test
 on:
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 # API Gateway URLs are stable — they only change if the resource is destroyed
 # and recreated. Update here if that ever happens.
 jobs:
