@@ -1,0 +1,58 @@
+name: PR Validation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'terraform/**'
+      - 'lambda/**'
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  validate:
+    name: Scan & validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── Python / Lambda ────────────────────────────────────────────────────
+      - name: Lambda dependency scan (pip-audit)
+        run: |
+          pip install pip-audit --quiet
+          pip-audit -r lambda/requirements.txt --skip-editable
+
+      # ── Terraform ──────────────────────────────────────────────────────────
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.6"
+
+      # Skips S3 backend init — no AWS credentials needed for format/validate.
+      - name: Terraform init (no backend)
+        working-directory: terraform
+        run: terraform init -backend=false
+
+      - name: Terraform format check
+        working-directory: terraform
+        run: terraform fmt -check -recursive
+
+      - name: Terraform validate
+        working-directory: terraform
+        run: terraform validate
+
+      # ── IaC security scan ─────────────────────────────────────────────────
+      # Same skip list as the deploy workflows — intentional design decisions
+      # documented in deploy-staging.yml.
+      - name: Checkov IaC security scan
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: terraform
+          framework: terraform
+          skip_check: CKV_AWS_272,CKV2_AWS_29,CKV_AWS_309,CKV_AWS_76,CKV_AWS_115,CKV_AWS_116,CKV_AWS_117,CKV_AWS_119,CKV_AWS_158,CKV_AWS_173
+          soft_fail: false
