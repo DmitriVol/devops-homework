@@ -1,0 +1,80 @@
+name: Deploy — Prod
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Terraform apply (prod)
+    runs-on: ubuntu-latest
+    # Requires the "prod" GitHub Environment to be configured with
+    # required reviewers — the job is gated until a reviewer approves.
+    environment: prod
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ secrets.PROD_DEPLOY_ROLE_ARN }}
+          role-duration-seconds: 3600
+
+      - name: Compute version string
+        id: version
+        run: echo "version=run${{ github.run_number }}-$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      # Scan Lambda dependencies for known CVEs before building the package.
+      - name: Lambda dependency scan
+        run: |
+          pip install pip-audit --quiet
+          pip-audit -r lambda/requirements.txt --skip-editable
+
+      - name: Build Lambda package
+        run: |
+          mkdir -p build
+          pip install -r lambda/requirements.txt -t build/ --quiet
+          cp lambda/handler.py build/
+          cd build && zip -r ../function.zip .
+
+      - name: Upload package to S3
+        id: upload
+        run: |
+          S3_KEY="lambda-packages/prod/${{ steps.version.outputs.version }}/function.zip"
+          aws s3 cp function.zip "s3://devops-hw-terraform-state/${S3_KEY}"
+          echo "s3_key=${S3_KEY}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.6"
+
+      - name: Terraform init
+        working-directory: terraform
+        run: terraform init -backend-config="key=prod/terraform.tfstate"
+
+      # Security gate — same policy as staging; must pass before prod changes.
+      - name: Checkov IaC security scan
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: terraform
+          framework: terraform
+          skip_check: CKV_AWS_272,CKV2_AWS_29
+          soft_fail: false
+
+      - name: Terraform plan
+        working-directory: terraform
+        env:
+          TF_VAR_alert_email: ${{ secrets.ALERT_EMAIL }}
+          TF_VAR_lambda_s3_key: ${{ steps.upload.outputs.s3_key }}
+          TF_VAR_lambda_version: ${{ steps.version.outputs.version }}
+        run: terraform plan -var-file="prod.tfvars" -out=tfplan
+
+      - name: Terraform apply
+        working-directory: terraform
+        run: terraform apply tfplan
