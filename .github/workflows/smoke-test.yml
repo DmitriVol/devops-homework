@@ -14,9 +14,9 @@ jobs:
       matrix:
         include:
           - env: staging
-            url: https://2mmdl69iw9.execute-api.us-east-1.amazonaws.com/health
+            url: ${{ vars.STAGING_INVOKE_URL }}
           - env: prod
-            url: https://lt6j035ztb.execute-api.us-east-1.amazonaws.com/health
+            url: ${{ vars.PROD_INVOKE_URL }}
 
     steps:
       - name: "Healthy request → expect 200 + healthy body"
