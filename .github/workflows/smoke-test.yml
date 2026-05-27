@@ -3,19 +3,26 @@ name: API Smoke Test
 on:
   workflow_dispatch:
 
-#URL- generated once when AWS creates the API Gateway resource and stays the same across every terraform apply. It only changes if the resource is destroyed and recreated
+# API Gateway URLs are stable — they only change if the resource is destroyed
+# and recreated. Update here if that ever happens.
 jobs:
   smoke:
-    name: Smoke test /health endpoint
+    name: "Smoke test — ${{ matrix.env }}"
     runs-on: ubuntu-latest
-    env:
-      URL: https://2mmdl69iw9.execute-api.us-east-1.amazonaws.com/health
+    strategy:
+      fail-fast: false   # run both environments even if one fails
+      matrix:
+        include:
+          - env: staging
+            url: https://2mmdl69iw9.execute-api.us-east-1.amazonaws.com/health
+          - env: prod
+            url: https://lt6j035ztb.execute-api.us-east-1.amazonaws.com/health
 
     steps:
       - name: "Healthy request → expect 200 + healthy body"
         run: |
           STATUS=$(curl -s -o /tmp/body.json -w "%{http_code}" \
-            -X POST "$URL" \
+            -X POST "${{ matrix.url }}" \
             -H "Content-Type: application/json" \
             -d '{"payload": "hello"}')
           echo "Status: $STATUS" && cat /tmp/body.json | jq
@@ -25,7 +32,7 @@ jobs:
       - name: "Missing payload → expect 400"
         run: |
           STATUS=$(curl -s -o /tmp/body.json -w "%{http_code}" \
-            -X POST "$URL" \
+            -X POST "${{ matrix.url }}" \
             -H "Content-Type: application/json" \
             -d '{}')
           echo "Status: $STATUS" && cat /tmp/body.json | jq
@@ -34,7 +41,7 @@ jobs:
       - name: "Empty payload → expect 400"
         run: |
           STATUS=$(curl -s -o /tmp/body.json -w "%{http_code}" \
-            -X POST "$URL" \
+            -X POST "${{ matrix.url }}" \
             -H "Content-Type: application/json" \
             -d '{"payload": ""}')
           echo "Status: $STATUS" && cat /tmp/body.json | jq
@@ -43,7 +50,7 @@ jobs:
       - name: "Null payload → expect 400"
         run: |
           STATUS=$(curl -s -o /tmp/body.json -w "%{http_code}" \
-            -X POST "$URL" \
+            -X POST "${{ matrix.url }}" \
             -H "Content-Type: application/json" \
             -d '{"payload": null}')
           echo "Status: $STATUS" && cat /tmp/body.json | jq
@@ -52,7 +59,7 @@ jobs:
       - name: "Malformed JSON → expect 400"
         run: |
           STATUS=$(curl -s -o /tmp/body.json -w "%{http_code}" \
-            -X POST "$URL" \
+            -X POST "${{ matrix.url }}" \
             -H "Content-Type: application/json" \
             -d 'not-json')
           echo "Status: $STATUS" && cat /tmp/body.json | jq
@@ -60,6 +67,7 @@ jobs:
 
       - name: "GET method → expect 400"
         run: |
-          STATUS=$(curl -s -o /tmp/body.json -w "%{http_code}" -X GET "$URL")
+          STATUS=$(curl -s -o /tmp/body.json -w "%{http_code}" -X GET "${{ matrix.url }}")
           echo "Status: $STATUS" && cat /tmp/body.json
           [ "$STATUS" = "400" ] || { echo "FAIL: expected 400, got $STATUS"; exit 1; }
+
