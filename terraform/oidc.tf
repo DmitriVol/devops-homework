@@ -6,8 +6,8 @@
 resource "aws_iam_openid_connect_provider" "github" {
   count = var.create_oidc_provider ? 1 : 0
 
-  url             = "https://token.actions.githubusercontent.com"
-  client_id_list  = ["sts.amazonaws.com"]
+  url            = "https://token.actions.githubusercontent.com"
+  client_id_list = ["sts.amazonaws.com"]
 
   # AWS validates GitHub tokens against GitHub's root CA (since Oct 2023),
   # so the thumbprint is no longer used for cryptographic verification —
@@ -32,7 +32,7 @@ locals {
   github_oidc_sub = var.environment == "staging" ? tolist([
     "repo:${var.github_repo}:ref:refs/heads/main",
     "repo:${var.github_repo}:environment:staging"
-  ]) : tolist([
+    ]) : tolist([
     "repo:${var.github_repo}:environment:prod"
   ])
 }
