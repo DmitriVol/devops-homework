@@ -145,13 +145,7 @@ resource "aws_iam_role_policy" "ci_deployment" {
           "lambda:TagResource",
           "lambda:UntagResource"
         ]
-        Resource = [
-          # Unversioned ARN — covers function-level operations
-          "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${var.environment}-health-check-function",
-          # Versioned ARN — needed when publish = true; Terraform reads each
-          # published version via GetFunctionConfiguration on the :N qualifier
-          "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${var.environment}-health-check-function:*"
-        ]
+        Resource = "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${var.environment}-health-check-function"
       },
       {
         Sid    = "ManageApiGateway"

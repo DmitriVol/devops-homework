@@ -14,7 +14,6 @@ resource "aws_lambda_function" "health_check" {
   s3_bucket    = var.lambda_s3_bucket
   s3_key       = var.lambda_s3_key
   description  = var.lambda_version
-  publish      = true
 
   runtime                        = "python3.12"
   handler                        = "handler.lambda_handler"
