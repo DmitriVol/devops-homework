@@ -74,8 +74,8 @@ resource "aws_iam_role_policy" "lambda_xray" {
 # ---------------------------------------------------------------------------
 # CI deployment role
 # Used by the CI/CD pipeline to deploy infrastructure via Terraform.
-# Trusted by the IAM user whose access key is stored in GitHub secrets.
-# Scoped to only the resource types this project manages.
+# Trusted by GitHub Actions via OIDC — short-lived STS credentials minted
+# per-run, no stored keys. Sub claim is locked to this repo and environment.
 # ---------------------------------------------------------------------------
 resource "aws_iam_role" "ci_deployment" {
   name = "${var.environment}-ci-deployment-role"
@@ -138,7 +138,6 @@ resource "aws_iam_role_policy" "ci_deployment" {
           "lambda:RemovePermission",
           "lambda:GetPolicy",
           "lambda:ListVersionsByFunction",
-          "lambda:PublishVersion",
           "lambda:PutFunctionConcurrency",
           "lambda:DeleteFunctionConcurrency",
           "lambda:ListTags",
