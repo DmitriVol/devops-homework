@@ -1,6 +1,7 @@
 environment      = "prod"
 aws_region       = "us-east-1"
 budget_limit_usd = 11
+lambda_s3_bucket = "devops-hw-terraform-state"
 github_repo           = "DmitriVol/devops-homework"
 create_oidc_provider  = false
 api_throttle_rate  = 100

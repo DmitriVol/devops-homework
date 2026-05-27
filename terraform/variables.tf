@@ -60,3 +60,19 @@ variable "api_throttle_burst" {
   description = "API Gateway burst request limit"
   type        = number
 }
+
+variable "lambda_s3_bucket" {
+  description = "S3 bucket containing the Lambda deployment package"
+  type        = string
+}
+
+variable "lambda_s3_key" {
+  description = "S3 object key of the Lambda deployment package; set by CI on each deploy"
+  type        = string
+}
+
+variable "lambda_version" {
+  description = "Human-readable version label (run<N>-<sha>) recorded as the Lambda function description"
+  type        = string
+  default     = "local"
+}

@@ -7,18 +7,14 @@ resource "aws_cloudwatch_log_group" "lambda" {
   tags = local.common_tags
 }
 
-data "archive_file" "lambda" {
-  type        = "zip"
-  source_dir  = "${path.module}/../lambda"
-  output_path = "${path.module}/lambda.zip"
-}
-
 resource "aws_lambda_function" "health_check" {
   function_name = "${var.environment}-health-check-function"
   role          = aws_iam_role.lambda_execution.arn
 
-  filename         = data.archive_file.lambda.output_path
-  source_code_hash = data.archive_file.lambda.output_base64sha256
+  s3_bucket    = var.lambda_s3_bucket
+  s3_key       = var.lambda_s3_key
+  description  = var.lambda_version
+  publish      = true
 
   runtime                        = "python3.12"
   handler                        = "handler.lambda_handler"
