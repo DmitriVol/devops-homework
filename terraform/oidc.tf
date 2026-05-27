@@ -1,5 +1,5 @@
 # The GitHub Actions OIDC provider is an account-level resource — it only needs
-# to exist once. We create it when applying staging (create_oidc_provider = true)
+# to exist once. Created by staging; prod resolves the ARN by construction. We create it when applying staging (create_oidc_provider = true)
 # and skip creation for prod (the provider already exists by then).
 # In both cases the ARN is available via the local below.
 
