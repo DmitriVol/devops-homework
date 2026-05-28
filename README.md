@@ -3,7 +3,7 @@
 POST to `/health` with a JSON payload → Lambda validates the input, stores the request in DynamoDB, returns `{"status": "healthy"}`. Two environments (staging, prod), all infrastructure in Terraform, deployed via GitHub Actions.
 
 ---
-# Erchitecture Graph
+# Architecture Graph
 
 GitHub Actions
      |
@@ -16,7 +16,31 @@ Terraform -----------> AWS
                           |
                         X-Ray
 
+# Deployment Flow
 
+Pull Request / Push to main
+          |
+          v
+   GitHub Actions
+          |
+          +--> pip-audit
+          +--> Terraform fmt / validate
+          +--> Checkov
+          +--> Terraform plan
+          |
+          v
+ GitHub Environment Approval
+          |
+          v
+   Terraform Apply
+          |
+          v
++---------------- AWS ----------------+
+| API Gateway -> Lambda -> DynamoDB   |
+|                    |                |
+|                    v                |
+|          CloudWatch Logs + X-Ray    |
++-------------------------------------+
 
 ## Application Logic
 
