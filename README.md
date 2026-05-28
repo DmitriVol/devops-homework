@@ -3,7 +3,7 @@
 POST to `/health` with a JSON payload → Lambda validates the input, stores the request in DynamoDB, returns `{"status": "healthy"}`. Two environments (staging, prod), all infrastructure in Terraform, deployed via GitHub Actions.
 
 ---
-# Architecture Graph
+## Architecture Graph
 
 GitHub Actions
      |
@@ -16,7 +16,7 @@ Terraform -----------> AWS
                           |
                         X-Ray
 
-# Deployment Flow
+## Deployment Flow
 
 Pull Request / Push to main
           |
@@ -41,6 +41,9 @@ Pull Request / Push to main
 |                    v                |
 |          CloudWatch Logs + X-Ray    |
 +-------------------------------------+
+
+
+---
 
 ## Application Logic
 
@@ -264,8 +267,7 @@ own log group and its own DynamoDB table — nothing else. The CI deployment rol
 lists every action Terraform actually calls and scopes each statement to the exact
 resource ARNs this project manages.
 
-**`PAY_PER_REQUEST` DynamoDB.** No capacity planning, scales to zero, Cost-efficient for low
- traffic workloads. SSE enabled (required by the spec, also costs nothing).
+**`PAY_PER_REQUEST` DynamoDB.** No capacity planning, scales to zero, cost-efficient for low-traffic workloads. SSE enabled (required by the spec, also costs nothing).
 PITR enabled — cheap and makes table recovery possible if something goes wrong.
 
 **Plan and apply both run inside GitHub Actions, never locally.** The OIDC trust
