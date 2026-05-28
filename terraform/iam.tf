@@ -4,7 +4,7 @@ data "aws_caller_identity" "current" {}
 # ---------------------------------------------------------------------------
 # Lambda execution role
 # Allows Lambda to write logs to a specific CloudWatch log group and
-# write items to the specific DynamoDB table. No wildcards in resource ARNs.
+# write items to the specific DynamoDB table. No wildcards in resource ARNs..
 # ---------------------------------------------------------------------------
 resource "aws_iam_role" "lambda_execution" {
   name = "${var.environment}-lambda-execution-role"
