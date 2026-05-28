@@ -11,7 +11,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 # Cached globally — reused across warm Lambda invocations.
-# Change to lambda - testing after  -- terraform destroy and apply
+# Change to lambda - testing after  -- terraform destroy and apply.
 dynamodb = boto3.resource("dynamodb")
 table = dynamodb.Table(os.environ["TABLE_NAME"])
 
