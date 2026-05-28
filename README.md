@@ -3,6 +3,20 @@
 POST to `/health` with a JSON payload → Lambda validates the input, stores the request in DynamoDB, returns `{"status": "healthy"}`. Two environments (staging, prod), all infrastructure in Terraform, deployed via GitHub Actions.
 
 ---
+# Erchitecture Graph
+
+GitHub Actions
+     |
+     v
+Terraform -----------> AWS
+                          |
+      API Gateway -> Lambda -> DynamoDB
+                          |
+                    CloudWatch Logs
+                          |
+                        X-Ray
+
+
 
 ## Application Logic
 
@@ -208,7 +222,8 @@ you have to rotate them and hope nobody used them. OIDC tokens expire when the j
 ends and are cryptographically bound to a specific repo, branch, and environment.
 The staging role only accepts tokens from pushes to `main` or jobs in the `staging`
 environment; the prod role only accepts jobs in the `prod` environment. A push to
-`main` cannot assume the prod role.
+`main` cannot assume the prod role. (Production credentials are isolated from 
+automatic staging deployments.)
 
 **S3-backed Lambda packages with versioned keys.** The pipeline builds the zip and
 uploads it as `lambda-packages/{env}/run{N}-{sha}/function.zip` before Terraform runs.
@@ -225,8 +240,8 @@ own log group and its own DynamoDB table — nothing else. The CI deployment rol
 lists every action Terraform actually calls and scopes each statement to the exact
 resource ARNs this project manages.
 
-**`PAY_PER_REQUEST` DynamoDB.** No capacity planning, scales to zero, effectively
-free for a homework project. SSE enabled (required by the spec, also costs nothing).
+**`PAY_PER_REQUEST` DynamoDB.** No capacity planning, scales to zero, Cost-efficient for low
+ traffic workloads. SSE enabled (required by the spec, also costs nothing).
 PITR enabled — cheap and makes table recovery possible if something goes wrong.
 
 **Plan and apply both run inside GitHub Actions, never locally.** The OIDC trust
@@ -274,43 +289,3 @@ can only write to the group Terraform created.
 **X-Ray tracing enabled on Lambda.** Active tracing adds per-invocation traces to
 AWS X-Ray at minimal cost. Useful for debugging cold starts and latency spikes without
 adding any instrumentation to the function code.
-
----
-
-## Known Issues
-
-**`terraform destroy` can leave a stale S3 lock file.**
-If a `terraform destroy` run is interrupted mid-execution (process killed, pipe closed,
-network drop), the S3 native lock file is not cleaned up. Subsequent Terraform commands
-fail with `Error: Error acquiring the state lock`. Fix:
-```bash
-aws s3 rm s3://devops-hw-terraform-state/staging/terraform.tfstate.tflock
-# or for prod:
-aws s3 rm s3://devops-hw-terraform-state/prod/terraform.tfstate.tflock
-```
-Only do this if you are certain no other Terraform process is running.
-
-**Rebuilding after a full destroy requires bootstrapping Lambda before re-apply.**
-A full destroy wipes the S3 Lambda packages. The next `terraform apply` will fail
-immediately because the Lambda resource references an S3 key that no longer exists.
-
-Destroy order matters: destroy staging first. The OIDC provider is created by the
-staging apply (`create_oidc_provider = true`); prod only resolves its ARN. Destroying
-staging removes the provider cleanly. Destroying prod first leaves it orphaned.
-
-After destroy, before applying either environment, upload a bootstrap package:
-```bash
-mkdir -p build && pip install -r lambda/requirements.txt -t build/
-cp lambda/handler.py build/
-cd build && zip -r ../function.zip . && cd ..
-aws s3 cp function.zip s3://devops-hw-terraform-state/lambda-packages/staging/bootstrap/function.zip
-aws s3 cp function.zip s3://devops-hw-terraform-state/lambda-packages/prod/bootstrap/function.zip
-```
-Then apply with the bootstrap key:
-```bash
-TF_VAR_lambda_s3_key=lambda-packages/staging/bootstrap/function.zip \
-  terraform apply -var-file="staging.tfvars"
-```
-After the first successful CI pipeline run the versioned key takes over and the
-bootstrap path is no longer needed.
-
