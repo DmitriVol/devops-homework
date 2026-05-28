@@ -216,11 +216,13 @@ Actions tab using **Run workflow**.
 The invoke URL is printed by `terraform output invoke_url` after apply, or find it in
 the AWS console under API Gateway → your API → Invoke URL.
 
-**Staging:** `https://<staging-id>.execute-api.us-east-1.amazonaws.com/health`  
-**Prod:** `https://<prod-id>.execute-api.us-east-1.amazonaws.com/health`
+**Staging:** `https://rtwa5sti6d.execute-api.us-east-1.amazonaws.com/health`  
+**Prod:** `https://8bql4tbsd3.execute-api.us-east-1.amazonaws.com/health`
 
+
+**Staging Example**
 ```bash
-INVOKE_URL=https://<your-invoke-url>/health
+INVOKE_URL=https://rtwa5sti6d.execute-api.us-east-1.amazonaws.com/health
 
 # Healthy request — expect 200
 curl -s -X POST $INVOKE_URL \
